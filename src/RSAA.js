@@ -5,6 +5,6 @@
  * @access public
  * @default
  */
-const CALL_API = Symbol('Call API');
+const RSAA = '@@redux-api-middleware/RSAA';
 
-export default CALL_API;
+export default RSAA;
