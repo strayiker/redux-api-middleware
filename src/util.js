@@ -1,4 +1,6 @@
+import { isJSONResponse } from './validation';
 import { InternalError, ApiError } from './errors';
+
 
 /**
  * Extract JSON body from a server response
@@ -6,17 +8,13 @@ import { InternalError, ApiError } from './errors';
  * @function getJSON
  * @access public
  * @param {object} res - A raw response object
- * @returns {promise|undefined}
+ * @returns {Promise}
  */
 async function getJSON(res) {
-  const contentType = res.headers.get('Content-Type');
-  const emptyCodes = [204, 205];
-
-  if (!~emptyCodes.indexOf(res.status) && contentType && ~contentType.indexOf('json')) {
+  if (isJSONResponse(res)) {
     return await res.json();
-  } else {
-    return await Promise.resolve();
   }
+  return await Promise.resolve();
 }
 
 /**
@@ -25,8 +23,8 @@ async function getJSON(res) {
  *
  * @function normalizeTypeDescriptors
  * @access private
- * @param {array} types - The [RSAA].types from a validated RSAA
- * @returns {array}
+ * @param {Array} types - The [RSAA].types from a validated RSAA
+ * @returns {Array}
  */
 function normalizeTypeDescriptors(types) {
   let [requestType, successType, failureType] = types;
@@ -38,6 +36,7 @@ function normalizeTypeDescriptors(types) {
   if (typeof successType === 'string' || typeof successType === 'symbol') {
     successType = { type: successType };
   }
+
   successType = {
     payload: (action, state, res) => getJSON(res),
     ...successType
@@ -46,11 +45,11 @@ function normalizeTypeDescriptors(types) {
   if (typeof failureType === 'string' || typeof failureType === 'symbol') {
     failureType = { type: failureType };
   }
+
   failureType = {
-    payload: (action, state, res) =>
-      getJSON(res).then(
-        (json) => new ApiError(res.status, res.statusText, json)
-      ),
+    payload: (action, state, res) => getJSON(res).then((json) =>
+      new ApiError(res.status, res.statusText, json)
+    ),
     ...failureType
   };
 
@@ -63,15 +62,15 @@ function normalizeTypeDescriptors(types) {
  * @function actionWith
  * @access private
  * @param {object} descriptor - A type descriptor
- * @param {array} args - The array of arguments for `payload` and `meta` function properties
+ * @param {Array} args - The array of arguments for `payload` and `meta` function properties
  * @returns {object}
  */
 async function actionWith(descriptor, args) {
   try {
     descriptor.payload = await (
-      typeof descriptor.payload === 'function' ?
-      descriptor.payload(...args) :
-      descriptor.payload
+      typeof descriptor.payload === 'function'
+        ? descriptor.payload(...args)
+        : descriptor.payload
     );
   } catch (e) {
     descriptor.payload = new InternalError(e.message);
@@ -80,9 +79,9 @@ async function actionWith(descriptor, args) {
 
   try {
     descriptor.meta = await (
-      typeof descriptor.meta === 'function' ?
-      descriptor.meta(...args) :
-      descriptor.meta
+      typeof descriptor.meta === 'function'
+        ? descriptor.meta(...args)
+        : descriptor.meta
     );
   } catch (e) {
     delete descriptor.meta;

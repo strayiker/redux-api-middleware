@@ -1,10 +1,10 @@
-import fetch from 'isomorphic-fetch';
-import isPlainObject from 'lodash.isplainobject';
-
 import RSAA from './RSAA';
 import { isRSAA, validateRSAA } from './validation';
-import { InvalidRSAA, RequestError, ApiError } from './errors' ;
-import { getJSON, normalizeTypeDescriptors, actionWith } from './util';
+import { InvalidRSAA, RequestError } from './errors' ;
+import { normalizeTypeDescriptors, actionWith } from './util';
+
+
+let requestId = 0;
 
 /**
  * A Redux middleware that processes RSAA actions.
@@ -13,7 +13,7 @@ import { getJSON, normalizeTypeDescriptors, actionWith } from './util';
  * @access public
  */
 function apiMiddleware({ getState }) {
-  return (next) => async (action) => {
+  return (next) => async(action) => {
     // Do not process actions without an [RSAA] property
     if (!isRSAA(action)) {
       return next(action);
@@ -21,43 +21,70 @@ function apiMiddleware({ getState }) {
 
     // Try to dispatch an error request FSA for invalid RSAAs
     const validationErrors = validateRSAA(action);
+
     if (validationErrors.length) {
       const callAPI = action[RSAA];
+
       if (callAPI.types && Array.isArray(callAPI.types)) {
         let requestType = callAPI.types[0];
+
         if (requestType && requestType.type) {
           requestType = requestType.type;
         }
+
         next({
           type: requestType,
           payload: new InvalidRSAA(validationErrors),
           error: true
         });
+
+        if (callAPI.onRequest &&
+          typeof callAPI.onRequest === 'function') {
+          callAPI.onRequest();
+        }
       }
+
       return;
     }
 
     // Parse the validated RSAA action
     const callAPI = action[RSAA];
-    var { endpoint, headers } = callAPI;
-    const { method, body, credentials, bailout, types } = callAPI;
-    const [requestType, successType, failureType] = normalizeTypeDescriptors(types);
+
+    const {
+      method,
+      body,
+      credentials,
+      bailout,
+      types,
+      onRequest = () => {},
+      onSuccess = () => {},
+      onFailure = () => {}
+    } = callAPI;
+
+    let {
+      endpoint,
+      headers
+    } = callAPI;
+
+    const [
+      requestType,
+      successType,
+      failureType
+    ] = normalizeTypeDescriptors(types);
 
     // Should we bail out?
     try {
       if ((typeof bailout === 'boolean' && bailout) ||
-          (typeof bailout === 'function' && bailout(getState()))) {
+        (typeof bailout === 'function' && bailout(getState()))) {
         return;
       }
     } catch (e) {
-      return next(await actionWith(
-        {
-          ...requestType,
-          payload: new RequestError('[RSAA].bailout function failed'),
-          error: true
-        },
-        [action, getState()]
-      ));
+      next(await actionWith({
+        ...requestType,
+        payload: new RequestError('[RSAA].bailout function failed'),
+        error: true
+      }, [action, getState()]));
+      return onRequest();
     }
 
     // Process [RSAA].endpoint function
@@ -65,14 +92,12 @@ function apiMiddleware({ getState }) {
       try {
         endpoint = endpoint(getState());
       } catch (e) {
-        return next(await actionWith(
-          {
-            ...requestType,
-            payload: new RequestError('[RSAA].endpoint function failed'),
-            error: true
-          },
-          [action, getState()]
-        ));
+        next(await actionWith({
+          ...requestType,
+          payload: new RequestError('[RSAA].endpoint function failed'),
+          error: true
+        }, [action, getState()]));
+        return onRequest();
       }
     }
 
@@ -81,52 +106,60 @@ function apiMiddleware({ getState }) {
       try {
         headers = headers(getState());
       } catch (e) {
-        return next(await actionWith(
-          {
-            ...requestType,
-            payload: new RequestError('[RSAA].headers function failed'),
-            error: true
-          },
-          [action, getState()]
-        ));
+        next(await actionWith({
+          ...requestType,
+          payload: new RequestError('[RSAA].headers function failed'),
+          error: true
+        }, [action, getState()]));
+        return onRequest();
       }
     }
 
-    // We can now dispatch the request FSA
-    next(await actionWith(
-      requestType,
-      [action, getState()]
-    ));
+    const request = { id: requestId++ };
+    let promise;
+    let res;
 
     try {
       // Make the API call
-      var res = await fetch(endpoint, { method, body, credentials, headers });
-    } catch(e) {
+      promise = fetch(endpoint, { method, body, credentials, headers });
+      request.promise = promise;
+
+      // We can now dispatch the request FSA
+      next(await actionWith({
+        ...requestType,
+        request: promise
+      }, [action, getState()]));
+      onRequest(request);
+
+      res = await promise;
+    } catch (e) {
       // The request was malformed, or there was a network error
-      return next(await actionWith(
-        {
-          ...requestType,
-          payload: new RequestError(e.message),
-          error: true
-        },
-        [action, getState()]
-      ));
+      next(await actionWith({
+        ...failureType,
+        payload: new RequestError(e.message),
+        error: true
+      }, [action, getState()]));
+
+      if (promise) {
+        return onFailure(request);
+      }
+      return onFailure();
     }
 
     // Process the server response
     if (res.ok) {
-      return next(await actionWith(
-        successType,
-        [action, getState(), res]
-      ));
+      next(await actionWith({
+        ...successType,
+        request: promise
+      }, [action, getState(), res]));
+      onSuccess(request);
     } else {
-      return next(await actionWith(
-        {
-          ...failureType,
-          error: true
-        },
-        [action, getState(), res]
-      ));
+      next(await actionWith({
+        ...failureType,
+        request: promise,
+        error: true
+      }, [action, getState(), res]));
+      onFailure(request);
     }
   }
 }

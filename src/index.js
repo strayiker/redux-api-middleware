@@ -30,7 +30,7 @@
  */
 
 import RSAA from './RSAA';
-import { isRSAA, validateRSAA, isValidRSAA } from './validation';
+import { isJSONResponse, isRSAA, validateRSAA, isValidRSAA } from './validation';
 import { InvalidRSAA, InternalError, RequestError, ApiError } from './errors';
 import { getJSON } from './util';
 import { apiMiddleware } from './middleware';
@@ -38,6 +38,7 @@ import { apiMiddleware } from './middleware';
 export {
   RSAA,
   isRSAA,
+  isJSONResponse,
   validateRSAA,
   isValidRSAA,
   InvalidRSAA,
