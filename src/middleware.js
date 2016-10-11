@@ -121,6 +121,7 @@ function apiMiddleware({ getState }) {
     try {
       // Make the API call
       promise = fetch(endpoint, { method, body, credentials, headers });
+      request.cancelablePromise = promise;
 
       // We can now dispatch the request FSA
       next(actionWith({
