@@ -4,7 +4,7 @@ import nock from 'nock';
 import RSAA from '../src/RSAA';
 import { isRSAA, isValidTypeDescriptor, validateRSAA, isValidRSAA } from '../src/validation';
 import { InvalidRSAA, InternalError, RequestError, ApiError } from '../src/errors';
-import { getJSON, normalizeTypeDescriptors, actionWith } from '../src/util';
+import { status, json, normalizeTypeDescriptors, actionWith } from '../src/util';
 import { apiMiddleware } from '../src/middleware';
 
 test('isRSAA must identify RSAAs', (t) => {
@@ -683,7 +683,7 @@ test('ApiError', (t) => {
   t.end();
 });
 
-test('getJSON', async(t) => {
+test('JSON', async (t) => {
   const res1 = {
     headers: {
       get(name) {
@@ -694,9 +694,10 @@ test('getJSON', async(t) => {
       return Promise.resolve({ message: 'ok' });
     }
   };
-  const result1 = await getJSON(res1);
+  const result1 = await json(res1);
+
   t.deepEqual(
-    result1,
+    result1.jsonData,
     { message: 'ok' },
     'returns the JSON body of a response with a JSONy \'Content-Type\' header'
   );
@@ -707,7 +708,7 @@ test('getJSON', async(t) => {
     }
   };
   try {
-    const result2 = await getJSON(res2);
+    const result2 = await json(res2);
   } catch (e) {
     t.pass('returns a rejected promise for a response with a not-JSONy \'Content-Type\' header');
   }
@@ -813,14 +814,14 @@ test('normalizeTypeDescriptors', (t) => {
   t.end();
 });
 
-test('actionWith', async(t) => {
+test('actionWith', (t) => {
   const descriptor1 = {
     type: 'REQUEST',
     payload: 'somePayload',
     meta: 'someMeta',
     error: true
   };
-  const fsa1 = await actionWith(descriptor1);
+  const fsa1 = actionWith(descriptor1);
   t.equal(
     fsa1.type,
     'REQUEST',
@@ -841,27 +842,31 @@ test('actionWith', async(t) => {
     'must set FSA error property to incoming descriptor error property'
   );
 
-  const passedArgs = ['action', 'state', 'res'];
+  const passedArgs = {
+    action: 'action',
+    state: 'state',
+    response: 'response'
+  };
   const descriptor2 = {
     type: 'REQUEST',
-    payload: (...args) => {
+    payload: (action, state, response) => {
       t.pass('must call a payload function');
       t.deepEqual(
-        args,
+        { action, state, response },
         passedArgs,
         'payload function must receive its arguments'
       );
     },
-    meta: (...args) => {
+    meta: (action, state, response) => {
       t.pass('must call a meta function');
       t.deepEqual(
-        args,
+        { action, state, response },
         passedArgs,
         'meta function must receive its arguments'
       );
     }
   };
-  const fsa2 = await actionWith(descriptor2, passedArgs);
+  const fsa2 = actionWith(descriptor2, passedArgs);
 
   const descriptor3 = {
     type: 'REQUEST',
@@ -869,7 +874,7 @@ test('actionWith', async(t) => {
       throw new Error('error in payload function');
     }
   };
-  const fsa3 = await actionWith(descriptor3, passedArgs);
+  const fsa3 = actionWith(descriptor3, passedArgs);
   t.equal(
     fsa3.payload.message,
     'error in payload function',
@@ -886,7 +891,7 @@ test('actionWith', async(t) => {
       throw new Error('error in meta function');
     }
   };
-  const fsa4 = await actionWith(descriptor4, passedArgs);
+  const fsa4 = actionWith(descriptor4, passedArgs);
   t.equal(
     fsa4.payload.message,
     'error in meta function',
@@ -1242,7 +1247,7 @@ test('apiMiddleware must dispatch an error request FSA on a request error', (t) 
         );
         t.equal(
           action.payload.name,
-          'RequestError',
+          'ApiError',
           'dispatched error FSA has correct payload property'
         );
         t.equal(

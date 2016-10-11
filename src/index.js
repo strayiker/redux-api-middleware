@@ -32,7 +32,7 @@
 import RSAA from './RSAA';
 import { isJSONResponse, isRSAA, validateRSAA, isValidRSAA } from './validation';
 import { InvalidRSAA, InternalError, RequestError, ApiError } from './errors';
-import { getJSON } from './util';
+import { status, json } from './util';
 import { apiMiddleware } from './middleware';
 
 export {
@@ -45,6 +45,7 @@ export {
   InternalError,
   RequestError,
   ApiError,
-  getJSON,
+  status,
+  json,
   apiMiddleware
 };

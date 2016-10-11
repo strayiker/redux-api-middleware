@@ -5,6 +5,5 @@
  * @access public
  * @default
  */
-const RSAA = '@@redux-api-middleware/RSAA';
 
-export default RSAA;
+export default '@@redux-api-middleware/RSAA';

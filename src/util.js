@@ -1,20 +1,39 @@
 import { isJSONResponse } from './validation';
 import { InternalError, ApiError } from './errors';
 
+/**
+ * Validate response status
+ *
+ * @function status
+ * @access public
+ * @param {object} response - A raw response object
+ * @returns {Promise}
+ */
+function status(response) {
+  if (response.status >= 200 && response.status < 300) {
+    return Promise.resolve(response);
+  } else {
+    return Promise.reject(response);
+  }
+}
 
 /**
  * Extract JSON body from a server response
  *
- * @function getJSON
+ * @function json
  * @access public
- * @param {object} res - A raw response object
+ * @param {object} response - A raw response object
  * @returns {Promise}
  */
-async function getJSON(res) {
-  if (isJSONResponse(res)) {
-    return await res.json();
+function json(response) {
+  if (!isJSONResponse(response)) {
+    return Promise.resolve(response);
   }
-  return await Promise.resolve();
+
+  return response.json().then((json) => {
+    response.jsonData = json;
+    return Promise.resolve(response);
+  });
 }
 
 /**
@@ -37,19 +56,17 @@ function normalizeTypeDescriptors(types) {
     successType = { type: successType };
   }
 
-  successType = {
-    payload: (action, state, res) => getJSON(res),
-    ...successType
-  };
-
   if (typeof failureType === 'string' || typeof failureType === 'symbol') {
     failureType = { type: failureType };
   }
 
+  successType = {
+    payload: (action, state, response) => response.jsonData,
+    ...successType
+  };
+  
   failureType = {
-    payload: (action, state, res) => getJSON(res).then((json) =>
-      new ApiError(res.status, res.statusText, json)
-    ),
+    payload: (action, state, response) => new ApiError(response.status, response.statusText, response.jsonData),
     ...failureType
   };
 
@@ -62,14 +79,16 @@ function normalizeTypeDescriptors(types) {
  * @function actionWith
  * @access private
  * @param {object} descriptor - A type descriptor
- * @param {Array} args - The array of arguments for `payload` and `meta` function properties
+ * @param {object} action - Action instance
+ * @param {object} state - Current redux state
+ * @param {object} response - Raw response object
  * @returns {object}
  */
-async function actionWith(descriptor, args) {
+function actionWith(descriptor, { action, state, response } = {}) {
   try {
-    descriptor.payload = await (
+    descriptor.payload = (
       typeof descriptor.payload === 'function'
-        ? descriptor.payload(...args)
+        ? descriptor.payload(action, state, response)
         : descriptor.payload
     );
   } catch (e) {
@@ -78,9 +97,9 @@ async function actionWith(descriptor, args) {
   }
 
   try {
-    descriptor.meta = await (
+    descriptor.meta = (
       typeof descriptor.meta === 'function'
-        ? descriptor.meta(...args)
+        ? descriptor.meta(action, state, response)
         : descriptor.meta
     );
   } catch (e) {
@@ -92,4 +111,4 @@ async function actionWith(descriptor, args) {
   return descriptor;
 }
 
-export { getJSON, normalizeTypeDescriptors, actionWith };
+export { status, json, normalizeTypeDescriptors, actionWith };
