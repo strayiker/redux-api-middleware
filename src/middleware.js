@@ -52,7 +52,8 @@ function apiMiddleware({ getState }) {
       body,
       credentials,
       bailout,
-      types
+      types,
+      meta
     } = callAPI;
 
     let {
@@ -64,7 +65,7 @@ function apiMiddleware({ getState }) {
       requestType,
       successType,
       failureType
-    ] = normalizeTypeDescriptors(types);
+    ] = normalizeTypeDescriptors(types, meta);
 
     // Should we bail out?
     try {

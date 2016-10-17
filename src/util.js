@@ -1,3 +1,4 @@
+import isPlainObject from 'lodash.isplainobject';
 import { isJSONResponse } from './validation';
 import { InternalError, ApiError } from './errors';
 
@@ -43,9 +44,10 @@ function json(response) {
  * @function normalizeTypeDescriptors
  * @access private
  * @param {Array} types - The [RSAA].types from a validated RSAA
+ * @param meta - Common meta
  * @returns {Array}
  */
-function normalizeTypeDescriptors(types) {
+function normalizeTypeDescriptors(types, meta) {
   let [requestType, successType, failureType] = types;
 
   if (typeof requestType === 'string' || typeof requestType === 'symbol') {
@@ -64,11 +66,17 @@ function normalizeTypeDescriptors(types) {
     payload: (action, state, response) => response.jsonData,
     ...successType
   };
-  
+
   failureType = {
     payload: (action, state, response) => new ApiError(response.status, response.statusText, response.jsonData),
     ...failureType
   };
+
+  if (meta) {
+    requestType.meta = requestType.meta || meta;
+    successType.meta = successType.meta || meta;
+    failureType.meta = failureType.meta || meta;
+  }
 
   return [requestType, successType, failureType];
 }
