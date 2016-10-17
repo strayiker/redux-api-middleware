@@ -149,7 +149,7 @@ function apiMiddleware({ getState }) {
       .then(json)
       .then(status)
       .then((response) => {
-        next(actionWith({
+        return next(actionWith({
           ...successType,
           request
         }, {
@@ -159,7 +159,7 @@ function apiMiddleware({ getState }) {
         }));
       })
       .catch((response) => {
-        next(actionWith({
+        return next(actionWith({
           ...failureType,
           request,
           error: true
