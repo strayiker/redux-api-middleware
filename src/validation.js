@@ -65,9 +65,7 @@ function validateRSAA(action) {
     'credentials',
     'bailout',
     'types',
-    'onRequest',
-    'onSuccess',
-    'onFailure'
+    'meta'
   ];
   const validMethods = [
     'GET',
@@ -115,10 +113,7 @@ function validateRSAA(action) {
     headers,
     credentials,
     types,
-    bailout,
-    onRequest,
-    onSuccess,
-    onFailure
+    bailout
   } = callAPI;
 
   if (typeof endpoint === 'undefined') {
@@ -167,18 +162,6 @@ function validateRSAA(action) {
     if (typeof failureType !== 'string' && typeof failureType !== 'symbol' && !isValidTypeDescriptor(failureType)) {
       validationErrors.push('Invalid failure type');
     }
-  }
-
-  if (typeof onRequest !== 'undefined' && typeof onRequest !== 'function') {
-    validationErrors.push('[RSAA].onRequest property must be a function, or undefined');
-  }
-
-  if (typeof onSuccess !== 'undefined' && typeof onSuccess !== 'function') {
-    validationErrors.push('[RSAA].onSuccess property must be a function, or undefined');
-  }
-
-  if (typeof onFailure !== 'undefined' && typeof onFailure !== 'function') {
-    validationErrors.push('[RSAA].onFailure property must be a function, or undefined');
   }
 
   return validationErrors;
