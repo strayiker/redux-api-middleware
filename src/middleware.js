@@ -149,25 +149,29 @@ function apiMiddleware({ getState }) {
       .then(json)
       .then(status)
       .then((response) => {
-        return next(actionWith({
-          ...successType,
-          request
-        }, {
-          action,
-          state: getState(),
-          response
-        }));
+        return Promise.resolve(
+          next(actionWith({
+            ...successType,
+            request
+          }, {
+            action,
+            state: getState(),
+            response
+          }))
+        );
       })
       .catch((response) => {
-        return next(actionWith({
-          ...failureType,
-          request,
-          error: true
-        }, {
-          action,
-          state: getState(),
-          response
-        }));
+        return Promise.reject(
+          next(actionWith({
+            ...failureType,
+            request,
+            error: true
+          }, {
+            action,
+            state: getState(),
+            response
+          }))
+        );
       });
   }
 }
