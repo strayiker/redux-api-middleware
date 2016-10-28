@@ -45,7 +45,5 @@ export {
   InternalError,
   RequestError,
   ApiError,
-  status,
-  json,
   apiMiddleware
 };

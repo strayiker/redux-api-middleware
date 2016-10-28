@@ -1,40 +1,11 @@
-import isPlainObject from 'lodash.isplainobject';
-import { isJSONResponse } from './validation';
-import { InternalError, ApiError } from './errors';
+import isEmpty from 'lodash.isempty';
+import { InternalError, ApiError, RequestError } from './errors';
 
-/**
- * Validate response status
- *
- * @function status
- * @access public
- * @param {object} response - A raw response object
- * @returns {Promise}
- */
-function status(response) {
-  if (response.status >= 200 && response.status < 300) {
-    return Promise.resolve(response);
-  } else {
-    return Promise.reject(response);
+
+function getJson(response) {
+  if (!isEmpty(response.body)) {
+    return response.body;
   }
-}
-
-/**
- * Extract JSON body from a server response
- *
- * @function json
- * @access public
- * @param {object} response - A raw response object
- * @returns {Promise}
- */
-function json(response) {
-  if (!isJSONResponse(response)) {
-    return Promise.resolve(response);
-  }
-
-  return response.json().then((json) => {
-    response.jsonData = json;
-    return Promise.resolve(response);
-  });
 }
 
 /**
@@ -63,12 +34,17 @@ function normalizeTypeDescriptors(types, meta) {
   }
 
   successType = {
-    payload: (action, state, response) => response.jsonData,
+    payload: (action, state, response) => getJson(response),
     ...successType
   };
 
   failureType = {
-    payload: (action, state, response) => new ApiError(response.status, response.statusText, response.jsonData),
+    payload: (action, state, response, error) => {
+      if (response) {
+        return new ApiError(response.status, response.statusText, getJson(response))
+      }
+      return new RequestError(error.toString());
+    },
     ...failureType
   };
 
@@ -90,13 +66,14 @@ function normalizeTypeDescriptors(types, meta) {
  * @param {object} action - Action instance
  * @param {object} state - Current redux state
  * @param {object} response - Raw response object
+ * @param {object} error - Error object
  * @returns {object}
  */
-function actionWith(descriptor, { action, state, response } = {}) {
+function actionWith(descriptor, { action, state, response, error } = {}) {
   try {
     descriptor.payload = (
       typeof descriptor.payload === 'function'
-        ? descriptor.payload(action, state, response)
+        ? descriptor.payload(action, state, response, error)
         : descriptor.payload
     );
   } catch (e) {
@@ -107,7 +84,7 @@ function actionWith(descriptor, { action, state, response } = {}) {
   try {
     descriptor.meta = (
       typeof descriptor.meta === 'function'
-        ? descriptor.meta(action, state, response)
+        ? descriptor.meta(action, state, response, error)
         : descriptor.meta
     );
   } catch (e) {
@@ -119,4 +96,4 @@ function actionWith(descriptor, { action, state, response } = {}) {
   return descriptor;
 }
 
-export { status, json, normalizeTypeDescriptors, actionWith };
+export { normalizeTypeDescriptors, actionWith };

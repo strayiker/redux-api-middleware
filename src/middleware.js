@@ -1,10 +1,10 @@
 import RSAA from './RSAA';
 import { isRSAA, validateRSAA } from './validation';
 import { InvalidRSAA, RequestError } from './errors' ;
-import { status, json, normalizeTypeDescriptors, actionWith } from './util';
+import { normalizeTypeDescriptors, actionWith } from './util';
+import superagent from 'superagent';
+import superagentRequestId from 'superagent-requestid';
 
-
-let globalRequestId = 0;
 
 /**
  * A Redux middleware that processes RSAA actions.
@@ -18,8 +18,6 @@ function apiMiddleware({ getState }) {
     if (!isRSAA(action)) {
       return next(action);
     }
-
-    globalRequestId++;
 
     // Try to dispatch an error request FSA for invalid RSAAs
     const validationErrors = validateRSAA(action);
@@ -49,6 +47,7 @@ function apiMiddleware({ getState }) {
 
     const {
       method,
+      query,
       body,
       credentials,
       bailout,
@@ -116,13 +115,27 @@ function apiMiddleware({ getState }) {
       }
     }
 
-    const request = { id: globalRequestId };
-    let promise;
+    let request;
 
     try {
       // Make the API call
-      promise = fetch(endpoint, { method, body, credentials, headers });
-      request.cancelablePromise = promise;
+      request = superagent(method, endpoint).use(superagentRequestId);
+
+      if (query) {
+        request.query(query);
+      }
+
+      if (headers) {
+        request.set(headers);
+      }
+
+      if (body) {
+        request.send(body);
+      }
+
+      if (credentials) {
+        request.withCredentials();
+      }
 
       // We can now dispatch the request FSA
       next(actionWith({
@@ -145,9 +158,7 @@ function apiMiddleware({ getState }) {
     }
 
     // Process the server response
-    return promise
-      .then(json)
-      .then(status)
+    return request
       .then((response) => {
         return Promise.resolve(
           next(actionWith({
@@ -160,7 +171,7 @@ function apiMiddleware({ getState }) {
           }))
         );
       })
-      .catch((response) => {
+      .catch((error) => {
         return Promise.reject(
           next(actionWith({
             ...failureType,
@@ -169,7 +180,8 @@ function apiMiddleware({ getState }) {
           }, {
             action,
             state: getState(),
-            response
+            response: error.response,
+            error
           }))
         );
       });

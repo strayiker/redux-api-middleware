@@ -58,8 +58,9 @@ function isValidTypeDescriptor(obj) {
  */
 function validateRSAA(action) {
   const validCallAPIKeys = [
-    'endpoint',
     'method',
+    'endpoint',
+    'query',
     'body',
     'headers',
     'credentials',
@@ -76,18 +77,12 @@ function validateRSAA(action) {
     'DELETE',
     'OPTIONS'
   ];
-  const validCredentials = [
-    'omit',
-    'same-origin',
-    'include'
-  ];
-
-  let validationErrors = [];
 
   if (!isRSAA(action)) {
-    validationErrors.push('RSAAs must be plain JavaScript objects with an [RSAA] property');
-    return validationErrors;
+    return ['RSAAs must be plain JavaScript objects with an [RSAA] property'];
   }
+
+  let validationErrors = [];
 
   for (const key of Object.keys(action)) {
     if (key !== RSAA) {
@@ -108,19 +103,14 @@ function validateRSAA(action) {
   }
 
   const {
-    endpoint,
     method,
+    endpoint,
+    query,
     headers,
     credentials,
     types,
     bailout
   } = callAPI;
-
-  if (typeof endpoint === 'undefined') {
-    validationErrors.push('[RSAA] must have an endpoint property');
-  } else if (typeof endpoint !== 'string' && typeof endpoint !== 'function') {
-    validationErrors.push('[RSAA].endpoint property must be a string or a function');
-  }
 
   if (typeof method === 'undefined') {
     validationErrors.push('[RSAA] must have a method property');
@@ -130,16 +120,22 @@ function validateRSAA(action) {
     validationErrors.push(`Invalid [RSAA].method: ${method.toUpperCase()}`);
   }
 
+  if (typeof endpoint === 'undefined') {
+    validationErrors.push('[RSAA] must have an endpoint property');
+  } else if (typeof endpoint !== 'string' && typeof endpoint !== 'function') {
+    validationErrors.push('[RSAA].endpoint property must be a string or a function');
+  }
+
+  if (typeof query !== 'undefined' && !isPlainObject(query)) {
+    validationErrors.push('[RSAA].query property must be undefined, or a plain JavaScript object');
+  }
+
   if (typeof headers !== 'undefined' && !isPlainObject(headers) && typeof headers !== 'function') {
     validationErrors.push('[RSAA].headers property must be undefined, a plain JavaScript object, or a function');
   }
 
-  if (typeof credentials !== 'undefined') {
-    if (typeof credentials !== 'string') {
-      validationErrors.push('[RSAA].credentials property must be undefined, or a string');
-    } else if (!~validCredentials.indexOf(credentials)) {
-      validationErrors.push(`Invalid [RSAA].credentials: ${credentials}`);
-    }
+  if (typeof credentials !== 'undefined' && typeof credentials !== 'boolean') {
+    validationErrors.push('[RSAA].credentials property must be undefined, or a boolean');
   }
 
   if (typeof bailout !== 'undefined' && typeof bailout !== 'boolean' && typeof bailout !== 'function') {
@@ -188,10 +184,8 @@ function isValidRSAA(action) {
  * @returns {bool}
  */
 function isJSONResponse(res) {
-  const contentType = res.headers.get('Content-Type');
   const emptyCodes = [204, 205];
-
-  return (!~emptyCodes.indexOf(res.status) && contentType && ~contentType.indexOf('json'));
+  return !~emptyCodes.indexOf(res.status) && ~res.type.indexOf('json');
 }
 
 export {

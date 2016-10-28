@@ -27,7 +27,9 @@
   "license": "MIT",
   "dependencies": {
     "babel-runtime": "^5.8.25",
-    "lodash.isplainobject": "^3.2.0"
+    "lodash.isempty": "^4.4.0",
+    "superagent": "^2.3.0",
+    "superagent-requestid": "0.0.1"
   },
   "devDependencies": {
     "babel": "^5.8.23",

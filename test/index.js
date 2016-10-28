@@ -1,10 +1,9 @@
-import fetch from 'isomorphic-fetch';
 import test from 'tape';
 import nock from 'nock';
 import RSAA from '../src/RSAA';
 import { isRSAA, isValidTypeDescriptor, validateRSAA, isValidRSAA } from '../src/validation';
 import { InvalidRSAA, InternalError, RequestError, ApiError } from '../src/errors';
-import { status, json, normalizeTypeDescriptors, actionWith } from '../src/util';
+import { normalizeTypeDescriptors, actionWith } from '../src/util';
 import { apiMiddleware } from '../src/middleware';
 
 test('isRSAA must identify RSAAs', (t) => {
@@ -219,29 +218,12 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     }
   };
   t.ok(
-    validateRSAA(action10).includes('[RSAA].credentials property must be undefined, or a string'),
-    '[RSAA].credentials property must be undefined or a string (validateRSAA)'
+    validateRSAA(action10).includes('[RSAA].credentials property must be undefined, or a boolean'),
+    '[RSAA].credentials property must be undefined or a boolean (validateRSAA)'
   );
   t.notOk(
     isValidRSAA(action10),
-    '[RSAA].credentials property must be undefined or a string (isValidRSAA)'
-  );
-
-  const action11 = {
-    [RSAA]: {
-      endpoint: '',
-      method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
-      credentials: 'InvalidCredentials'
-    }
-  };
-  t.ok(
-    validateRSAA(action11).includes('Invalid [RSAA].credentials: InvalidCredentials'),
-    '[RSAA].credentials property must be one of the string \'omit\', \'same-origin\', or \'include\' (validateRSAA)'
-  );
-  t.notOk(
-    isValidRSAA(action11),
-    '[RSAA].credentials property must be one of the string \'omit\', \'same-origin\', or \'include\' (isValidRSAA)'
+    '[RSAA].credentials property must be undefined or a boolean (isValidRSAA)'
   );
 
   const action12 = {
@@ -578,39 +560,6 @@ test('ApiError', (t) => {
   t.end();
 });
 
-test('JSON', async (t) => {
-  const res1 = {
-    headers: {
-      get(name) {
-        return name === 'Content-Type' ? 'application/json' : undefined;
-      }
-    },
-    json() {
-      return Promise.resolve({ message: 'ok' });
-    }
-  };
-  const result1 = await json(res1);
-
-  t.deepEqual(
-    result1.jsonData,
-    { message: 'ok' },
-    'returns the JSON body of a response with a JSONy \'Content-Type\' header'
-  );
-
-  const res2 = {
-    headers: {
-      get() {}
-    }
-  };
-  try {
-    const result2 = await json(res2);
-  } catch (e) {
-    t.pass('returns a rejected promise for a response with a not-JSONy \'Content-Type\' header');
-  }
-
-  t.end();
-});
-
 test('normalizeTypeDescriptors', (t) => {
   const types1 = ['REQUEST', 'SUCCESS', 'FAILURE'];
   const descriptors1 = normalizeTypeDescriptors(types1);
@@ -618,7 +567,7 @@ test('normalizeTypeDescriptors', (t) => {
     Array.isArray(descriptors1) && descriptors1.length === 3,
     'returns an array of length 3'
   );
-  t.deepEqual(
+  t.equal(
     descriptors1[0].type,
     'REQUEST',
     'request type has the correct type property'
@@ -628,7 +577,7 @@ test('normalizeTypeDescriptors', (t) => {
     1,
     'request type has no other properties by default'
   );
-  t.deepEqual(
+  t.equal(
     descriptors1[1].type,
     'SUCCESS',
     'success type has the correct type property'
@@ -642,7 +591,7 @@ test('normalizeTypeDescriptors', (t) => {
     2,
     'success type has no other properties by default'
   );
-  t.deepEqual(
+  t.equal(
     descriptors1[2].type,
     'FAILURE',
     'failure type has the correct type property'
@@ -1142,7 +1091,7 @@ test('apiMiddleware must dispatch an error request FSA on a request error', (t) 
         );
         t.equal(
           action.payload.name,
-          'ApiError',
+          'RequestError',
           'dispatched error FSA has correct payload property'
         );
         t.equal(
@@ -1367,9 +1316,9 @@ test('apiMiddleware must dispatch a success FSA on a successful API call with an
         break;
       case 'SUCCESS':
         t.pass('success FSA passed to the next handler');
-        t.deepEqual(
-          action.payload,
-          {},
+        t.equal(
+          typeof action.payload,
+          'undefined',
           'success FSA has correct payload property'
         );
         t.equal(
@@ -1435,7 +1384,7 @@ test('apiMiddleware must dispatch a success FSA on a successful API call with a 
         break;
       case 'SUCCESS':
         t.pass('success FSA passed to the next handler');
-        t.deepEqual(
+        t.equal(
           typeof action.payload,
           'undefined',
           'success FSA has correct payload property'
@@ -1572,9 +1521,9 @@ test('apiMiddleware must dispatch a failure FSA on an unsuccessful API call with
         break;
       case 'FAILURE':
         t.pass('failure FSA passed to the next handler');
-        t.deepEqual(
-          action.payload.response,
-          {},
+        t.equal(
+          typeof action.payload.response,
+          'undefined',
           'failure FSA has correct payload property'
         );
         t.equal(
@@ -1640,7 +1589,7 @@ test('apiMiddleware must dispatch a failure FSA on an unsuccessful API call with
         break;
       case 'FAILURE':
         t.pass('failure FSA passed to the next handler');
-        t.deepEqual(
+        t.equal(
           typeof action.payload.response,
           'undefined',
           'failure FSA has correct payload property'
