@@ -175,23 +175,9 @@ function isValidRSAA(action) {
   return !validateRSAA(action).length;
 }
 
-/**
- * Validate request content type and code
- *
- * @function isJSONResponse
- * @access public
- * @param {object} res - A raw response object
- * @returns {bool}
- */
-function isJSONResponse(res) {
-  const emptyCodes = [204, 205];
-  return !~emptyCodes.indexOf(res.status) && ~res.type.indexOf('json');
-}
-
 export {
   isRSAA,
   isValidTypeDescriptor,
   validateRSAA,
-  isValidRSAA,
-  isJSONResponse
+  isValidRSAA
 };
