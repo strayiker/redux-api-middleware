@@ -96,4 +96,4 @@ function actionWith(descriptor, { action, state, response, error } = {}) {
   return descriptor;
 }
 
-export { normalizeTypeDescriptors, actionWith };
+export { getJson, normalizeTypeDescriptors, actionWith };
