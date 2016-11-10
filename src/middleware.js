@@ -159,13 +159,15 @@ function apiMiddleware({ getState }) {
     }
 
     request.on('abort', () => {
-      next(actionWith({
-        ...abortType,
-        request
-      }, {
-        action,
-        state: getState()
-      }))
+      setTimeout(() => {
+        next(actionWith({
+          ...abortType,
+          request
+        }, {
+          action,
+          state: getState()
+        }));
+      }, 0);
     });
 
     // Process the server response
