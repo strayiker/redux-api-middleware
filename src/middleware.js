@@ -63,7 +63,8 @@ function apiMiddleware({ getState }) {
     const [
       requestType,
       successType,
-      failureType
+      failureType,
+      abortType
     ] = normalizeTypeDescriptors(types, meta);
 
     // Should we bail out?
@@ -156,6 +157,16 @@ function apiMiddleware({ getState }) {
         state: getState()
       }));
     }
+
+    request.on('abort', () => {
+      next(actionWith({
+        ...abortType,
+        request
+      }, {
+        action,
+        state: getState()
+      }))
+    });
 
     // Process the server response
     return request

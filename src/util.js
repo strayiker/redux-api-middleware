@@ -19,7 +19,7 @@ function getJson(response) {
  * @returns {Array}
  */
 function normalizeTypeDescriptors(types, meta) {
-  let [requestType, successType, failureType] = types;
+  let [requestType, successType, failureType, abortType] = types;
 
   if (typeof requestType === 'string' || typeof requestType === 'symbol') {
     requestType = { type: requestType };
@@ -31,6 +31,10 @@ function normalizeTypeDescriptors(types, meta) {
 
   if (typeof failureType === 'string' || typeof failureType === 'symbol') {
     failureType = { type: failureType };
+  }
+
+  if (typeof abortType === 'string' || typeof abortType === 'symbol') {
+    abortType = { type: abortType };
   }
 
   successType = {
@@ -52,9 +56,10 @@ function normalizeTypeDescriptors(types, meta) {
     requestType.meta = requestType.meta || meta;
     successType.meta = successType.meta || meta;
     failureType.meta = failureType.meta || meta;
+    abortType.meta = abortType.meta || meta;
   }
 
-  return [requestType, successType, failureType];
+  return [requestType, successType, failureType, abortType];
 }
 
 /**

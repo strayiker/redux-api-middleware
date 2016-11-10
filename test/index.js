@@ -148,7 +148,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: {},
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   t.ok(
@@ -164,7 +164,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: {},
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   t.ok(
@@ -180,7 +180,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'InvalidMethod',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   t.ok(
@@ -196,7 +196,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       headers: ''
     }
   };
@@ -213,7 +213,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       credentials: {}
     }
   };
@@ -230,7 +230,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       bailout: ''
     }
   };
@@ -251,7 +251,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     }
   };
   t.ok(
-    validateRSAA(action13).includes('[RSAA].types property must be an array of length 3'),
+    validateRSAA(action13).includes('[RSAA].types property must be an array of length 4'),
     '[RSAA].types property must be an array (validateRSAA)'
   );
   t.notOk(
@@ -267,26 +267,27 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     }
   };
   t.ok(
-    validateRSAA(action14).includes('[RSAA].types property must be an array of length 3'),
-    '[RSAA].types property must have length 3 (validateRSAA)'
+    validateRSAA(action14).includes('[RSAA].types property must be an array of length 4'),
+    '[RSAA].types property must have length 4 (validateRSAA)'
   );
   t.notOk(
     isValidRSAA(action14),
-    '[RSAA].types property must have length 3 (isValidRSAA)'
+    '[RSAA].types property must have length 4 (isValidRSAA)'
   );
 
   const action15 = {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: [{}, {}, {}]
+      types: [{}, {}, {}, {}]
     }
   };
   t.ok(
     validateRSAA(action15).includes(
       'Invalid request type',
       'Invalid success type',
-      'Invalid failure type'
+      'Invalid failure type',
+      'Invalid abort type'
     ),
     'Each element in [RSAA].types property must be a string, a symbol, or a type descriptor (validateRSAA)'
   );
@@ -299,9 +300,10 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
+  console.log(validateRSAA(action16));
   t.equal(
     validateRSAA(action16).length,
     0,
@@ -316,7 +318,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: () => '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   t.equal(
@@ -333,7 +335,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       headers: {}
     }
   };
@@ -351,7 +353,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       headers: () => {}
     }
   };
@@ -369,7 +371,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       bailout: false
     }
   };
@@ -387,7 +389,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       bailout: () => false
     }
   };
@@ -405,7 +407,7 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     [RSAA]: {
       endpoint: '',
       method: 'GET',
-      types: [Symbol(), Symbol(), Symbol()]
+      types: [Symbol(), Symbol(), Symbol(), Symbol()]
     }
   };
   t.equal(
@@ -437,6 +439,11 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
           type: 'FAILURE',
           payload: 'failurePayload',
           meta: 'failureMeta'
+        },
+        {
+          type: 'ABORT',
+          payload: 'abortPayload',
+          meta: 'abortMeta'
         }
       ]
     }
@@ -561,11 +568,11 @@ test('ApiError', (t) => {
 });
 
 test('normalizeTypeDescriptors', (t) => {
-  const types1 = ['REQUEST', 'SUCCESS', 'FAILURE'];
+  const types1 = ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'];
   const descriptors1 = normalizeTypeDescriptors(types1);
   t.ok(
-    Array.isArray(descriptors1) && descriptors1.length === 3,
-    'returns an array of length 3'
+    Array.isArray(descriptors1) && descriptors1.length === 4,
+    'returns an array of length 4'
   );
   t.equal(
     descriptors1[0].type,
@@ -913,7 +920,8 @@ test('apiMiddleware must dispatch an error request FSA when [RSAA].bailout fails
           meta: () => 'someMeta'
         },
         'SUCCESS',
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -959,7 +967,8 @@ test('apiMiddleware must dispatch an error request FSA when [RSAA].endpoint fail
           meta: 'someMeta'
         },
         'SUCCESS',
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1006,7 +1015,8 @@ test('apiMiddleware must dispatch an error request FSA when [RSAA].headers fails
           meta: 'someMeta'
         },
         'SUCCESS',
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1052,7 +1062,8 @@ test('apiMiddleware must dispatch an error request FSA on a request error', (t) 
           meta: 'someMeta'
         },
         'SUCCESS',
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1116,7 +1127,7 @@ test('apiMiddleware must use an [RSAA].bailout boolean when present', (t) => {
     [RSAA]: {
       endpoint: 'http://127.0.0.1/api/users/1',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       bailout: true
     }
   };
@@ -1139,7 +1150,7 @@ test('apiMiddleware must use an [RSAA].bailout function when present', (t) => {
     [RSAA]: {
       endpoint: 'http://127.0.0.1/api/users/1',
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT'],
       bailout: () => {
         t.pass('[RSAA].bailout function called');
         return true;
@@ -1168,7 +1179,7 @@ test('apiMiddleware must use an [RSAA].endpoint function when present', (t) => {
         return 'http://127.0.0.1/api/users/1';
       },
       method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   const doGetState = () => {};
@@ -1191,7 +1202,7 @@ test('apiMiddleware must use an [RSAA].headers function when present', (t) => {
       headers: () => {
         t.pass('[RSAA].headers function called')
       },
-      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+      types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
   const doGetState = () => {};
@@ -1221,7 +1232,8 @@ test('apiMiddleware must dispatch a success FSA on a successful API call with a 
           type: 'SUCCESS',
           meta: 'successMeta'
         },
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1289,7 +1301,8 @@ test('apiMiddleware must dispatch a success FSA on a successful API call with an
           type: 'SUCCESS',
           meta: 'successMeta'
         },
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1357,7 +1370,8 @@ test('apiMiddleware must dispatch a success FSA on a successful API call with a 
           type: 'SUCCESS',
           meta: 'successMeta'
         },
-        'FAILURE'
+        'FAILURE',
+        'ABORT'
       ]
     }
   };
@@ -1426,6 +1440,10 @@ test('apiMiddleware must dispatch a failure FSA on an unsuccessful API call with
         {
           type: 'FAILURE',
           meta: 'failureMeta'
+        },
+        {
+          type: 'ABORT',
+          meta: 'abortMeta'
         }
       ]
     }
@@ -1494,6 +1512,10 @@ test('apiMiddleware must dispatch a failure FSA on an unsuccessful API call with
         {
           type: 'FAILURE',
           meta: 'failureMeta'
+        },
+        {
+          type: 'ABORT',
+          meta: 'abortMeta'
         }
       ]
     }
@@ -1562,6 +1584,10 @@ test('apiMiddleware must dispatch a failure FSA on an unsuccessful API call with
         {
           type: 'FAILURE',
           meta: 'failureMeta'
+        },
+        {
+          type: 'ABORT',
+          meta: 'abortMeta'
         }
       ]
     }
