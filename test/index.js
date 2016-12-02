@@ -303,7 +303,6 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
       types: ['REQUEST', 'SUCCESS', 'FAILURE', 'ABORT']
     }
   };
-  console.log(validateRSAA(action16));
   t.equal(
     validateRSAA(action16).length,
     0,

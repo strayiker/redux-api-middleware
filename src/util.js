@@ -1,9 +1,8 @@
-import isEmpty from 'lodash.isempty';
 import { InternalError, ApiError, RequestError } from './errors';
 
 
 function getJson(response) {
-  if (!isEmpty(response.body)) {
+  if (JSON.stringify(response.body) !== '{}') {
     return response.body;
   }
 }
